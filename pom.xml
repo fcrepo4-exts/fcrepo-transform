@@ -5,21 +5,21 @@
   <parent>
     <artifactId>fcrepo</artifactId>
     <groupId>org.fcrepo</groupId>
-    <version>4.4.1-SNAPSHOT</version>
+    <version>4.5.0-RC-1</version>
   </parent>
 
   <groupId>org.fcrepo.transform</groupId>
   <artifactId>fcrepo-transform</artifactId>
   <packaging>bundle</packaging>
 
-  <version>4.4.1-SNAPSHOT</version>
+  <version>4.5.0-RC-1</version>
 
   <name>Fedora Repository RDF Transformations Module</name>
   <description>The Fedora Commons repository transformations module: Provides facilities to use SPARQL or LDPath to tranform repository RDF into desired forms.</description>
 
   <properties>
     <ldpath.version>3.2.1</ldpath.version>
-    <fcrepo.version>4.4.1-SNAPSHOT</fcrepo.version>
+    <fcrepo.version>4.5.0-RC-1</fcrepo.version>
     <osgi.import.packages>
       org.fcrepo.kernel.api,
       org.fcrepo.http.api,
