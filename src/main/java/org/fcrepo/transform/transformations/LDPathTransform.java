@@ -25,32 +25,30 @@ import org.apache.marmotta.ldpath.exception.LDPathParseException;
 
 import org.fcrepo.kernel.api.RdfStream;
 import org.fcrepo.kernel.api.exception.RepositoryRuntimeException;
+import org.fcrepo.kernel.api.models.FedoraBinary;
+import org.fcrepo.kernel.api.models.FedoraResource;
+import org.fcrepo.kernel.api.services.NodeService;
+import org.fcrepo.transform.TransformNotFoundException;
 import org.fcrepo.transform.Transformation;
 
 import org.slf4j.Logger;
 
-import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
-import javax.ws.rs.WebApplicationException;
-
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
+import java.util.stream.Collectors;
 
-import static com.google.common.collect.ImmutableList.builder;
-import static com.google.common.collect.ImmutableSortedSet.orderedBy;
 import static com.hp.hpl.jena.rdf.model.ResourceFactory.createResource;
-import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.fcrepo.kernel.api.RdfCollectors.toModel;
-import static org.modeshape.jcr.api.JcrConstants.JCR_CONTENT;
-import static org.modeshape.jcr.api.JcrConstants.JCR_DATA;
 import static org.slf4j.LoggerFactory.getLogger;
+import static org.fcrepo.kernel.api.RdfLexicon.REPOSITORY_NAMESPACE;
 
 /**
  * Utilities for working with LDPath
@@ -60,6 +58,9 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class LDPathTransform implements Transformation<List<Map<String, Collection<Object>>>>  {
 
     public static final String CONFIGURATION_FOLDER = "/fedora:system/fedora:transform/fedora:ldpath/";
+
+    public static final String DEFAULT_TRANSFORM_RESOURCE = CONFIGURATION_FOLDER + 
+            "default/fedora:Resource";
 
     private static final Comparator<NodeType> BY_NAME =
             (final NodeType o1, final NodeType o2) -> o1.getName().compareTo(o2.getName());
@@ -78,60 +79,39 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
         this.query = query;
     }
 
-    /**
-     * Pull a node-type specific transform out of JCR
-     * @param node the node
-     * @param key the key
-     * @return node-type specific transform
-     * @throws RepositoryException if repository exception occurred
-     */
-    public static LDPathTransform getNodeTypeTransform(final Node node,
-        final String key) throws RepositoryException {
+    public static LDPathTransform getResourceTransform(final FedoraResource resource, final NodeService nodeService,
+            final String key) throws RepositoryException {
 
-        final Node programNode = node.getSession().getNode(CONFIGURATION_FOLDER + key);
+        final FedoraResource programResource = nodeService.cast(resource.getNode().getSession().getNode(CONFIGURATION_FOLDER + key));
+    
+        LOGGER.debug("Found program resource: {}", programResource.getPath());
+    
+        final List<URI> rdfTypes = resource.getTypes();
+    
+        LOGGER.debug("Discovered rdf types: {}", rdfTypes);
+        
+        final List<String> rdfStringTypes = rdfTypes.stream().map(type -> programResource.getPath() + "/" + type.toString().replace( REPOSITORY_NAMESPACE, "fedora:") + "/jcr:content").collect(Collectors.toList());
+        
+        programResource.getChildren().forEach(x -> LOGGER.debug("programResource child {}", x));
+        rdfStringTypes.stream().forEach(x -> LOGGER.debug("rdfType {}",x));
+    
+        final FedoraBinary transform = (FedoraBinary) programResource.getChildren().
+            filter(child -> rdfStringTypes.contains(child.getPath())).findFirst()
+            .orElseThrow(() -> new TransformNotFoundException(String.format("Couldn't find transformation for {} and transformation key {}", resource.getPath(), key)));
 
-        LOGGER.debug("Found program node: {}", programNode.getPath());
-
-        final NodeType primaryNodeType = node.getPrimaryNodeType();
-
-        final Set<NodeType> supertypes = orderedBy(BY_NAME).add(primaryNodeType.getSupertypes()).build();
-        final Set<NodeType> mixinTypes = orderedBy(BY_NAME).add(node.getMixinNodeTypes()).build();
-
-        // start with mixins, primary type, and supertypes of primary type
-        final ImmutableList.Builder<NodeType> nodeTypesB = builder();
-        nodeTypesB.addAll(mixinTypes).add(primaryNodeType).addAll(supertypes);
-
-        // add supertypes of mixins
-        mixinTypes.stream().map(mixin -> orderedBy(BY_NAME).add(mixin.getDeclaredSupertypes()).build())
-            .forEach(nodeTypesB::addAll);
-
-        final List<NodeType> nodeTypes = nodeTypesB.build();
-
-        LOGGER.debug("Discovered node types: {}", nodeTypes);
-        for (final NodeType nodeType : nodeTypes) {
-            if (programNode.hasNode(nodeType.toString())) {
-                return new LDPathTransform(programNode.getNode(nodeType.toString())
-                                               .getNode(JCR_CONTENT)
-                                               .getProperty(JCR_DATA)
-                                               .getBinary().getStream());
-            }
-        }
-
-        throw new WebApplicationException(new Exception(
-                "Couldn't find transformation for " + node.getPath()
-                        + " and transformation key " + key), SC_BAD_REQUEST);
+        return new LDPathTransform(transform.getContent());
     }
 
     @Override
     public List<Map<String, Collection<Object>>> apply(final RdfStream stream) {
         final LDPath<RDFNode> ldpathForResource =
-            getLdpathResource(stream);
+                getLdpathResource(stream);
 
         final Resource context = createResource(stream.topic().getURI());
 
         try {
             return ImmutableList.of(unsafeCast(
-                ldpathForResource.programQuery(context, new InputStreamReader(query))));
+                    ldpathForResource.programQuery(context, new InputStreamReader(query))));
         } catch (final LDPathParseException e) {
             throw new RepositoryRuntimeException(e);
         }
