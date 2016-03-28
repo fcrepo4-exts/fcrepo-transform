@@ -122,7 +122,7 @@ public class FedoraTransform extends ContentExposingResource {
 
                 final FedoraResource resource =
                         containerService.findOrCreate(internalSession, CONFIGURATION_FOLDER + key);
-                LOGGER.debug("Transforming resource: {}", resource.getPath());
+                LOGGER.debug("Transformation default resource: {}", resource.getPath());
 
                 final Stream<FedoraResource> children = resource.getChildren();
                 children.forEach(child -> LOGGER.debug("Child is {}", child.getPath()));

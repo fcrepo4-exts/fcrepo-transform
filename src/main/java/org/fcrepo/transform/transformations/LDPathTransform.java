@@ -33,22 +33,22 @@ import org.fcrepo.transform.Transformation;
 
 import org.slf4j.Logger;
 
+import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
-import javax.jcr.nodetype.NodeType;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.hp.hpl.jena.rdf.model.ResourceFactory.createResource;
 import static org.fcrepo.kernel.api.RdfCollectors.toModel;
 import static org.slf4j.LoggerFactory.getLogger;
-import static org.fcrepo.kernel.api.RdfLexicon.REPOSITORY_NAMESPACE;
 
 /**
  * Utilities for working with LDPath
@@ -59,11 +59,8 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
 
     public static final String CONFIGURATION_FOLDER = "/fedora:system/fedora:transform/fedora:ldpath/";
 
-    public static final String DEFAULT_TRANSFORM_RESOURCE = CONFIGURATION_FOLDER + 
+    public static final String DEFAULT_TRANSFORM_RESOURCE = CONFIGURATION_FOLDER +
             "default/fedora:Resource";
-
-    private static final Comparator<NodeType> BY_NAME =
-            (final NodeType o1, final NodeType o2) -> o1.getName().compareTo(o2.getName());
 
     // TODO: this mime type was made up
     public static final String APPLICATION_RDF_LDPATH = "application/rdf+ldpath";
@@ -82,22 +79,41 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
     public static LDPathTransform getResourceTransform(final FedoraResource resource, final NodeService nodeService,
             final String key) throws RepositoryException {
 
-        final FedoraResource programResource = nodeService.find(resource.getNode().getSession(), CONFIGURATION_FOLDER + key);
-    
-        LOGGER.debug("Found program resource: {}", programResource.getPath());
-    
-        final List<URI> rdfTypes = resource.getTypes();
-    
-        LOGGER.debug("Discovered rdf types: {}", rdfTypes);
-        
-        final List<String> rdfStringTypes = rdfTypes.stream().map(type -> programResource.getPath() + "/" + type.toString().replace( REPOSITORY_NAMESPACE, "fedora:") + "/jcr:content").collect(Collectors.toList());
-        
-        final FedoraBinary transform = (FedoraBinary) programResource.getChildren()
-            .peek(child -> LOGGER.debug("programResource child path is {}", child.getPath()))
-            .filter(child -> rdfStringTypes.contains(child.getPath()))
-            .findFirst()
-            .orElseThrow(() -> new TransformNotFoundException(String.format("Couldn't find transformation for {} and transformation key {}", resource.getPath(), key)));
+        final FedoraResource transformResource =
+                nodeService.find(resource.getNode().getSession(), CONFIGURATION_FOLDER + key);
 
+        LOGGER.debug("Found transform resource: {}", transformResource.getPath());
+
+        final List<URI> rdfTypes = resource.getTypes();
+
+        LOGGER.debug("Discovered rdf types: {}", rdfTypes);
+
+        final NamespaceRegistry nsRegistry = resource.getNode().getSession().getWorkspace().getNamespaceRegistry();
+
+        // convert rdf:type with URI namespace to prefixed namespace
+        final Function<URI, String> namespaceUriToPrefix = x -> {
+            final String uriString = x.toString();
+            try {
+                for (final String namespace : Arrays.asList(nsRegistry.getURIs())) {
+                    // There is an empty namespace URI and that matches everything.
+                    if (namespace.length() > 0 && uriString.startsWith(namespace)) {
+                        return uriString.replace(namespace, nsRegistry.getPrefix(namespace) + ":");
+                    }
+                }
+                return uriString;
+            } catch (final RepositoryException e) {
+                return uriString;
+            }
+        };
+
+        final List<String> rdfStringTypes = rdfTypes.stream().map(namespaceUriToPrefix)
+                .map(stringType -> transformResource.getPath() + "/" + stringType + "/jcr:content")
+                .collect(Collectors.toList());
+
+        final FedoraBinary transform = (FedoraBinary) transformResource.getChildren()
+                .filter(child -> rdfStringTypes.contains(child.getPath()))
+                .findFirst()
+                .orElseThrow(() -> new TransformNotFoundException(String.format("Couldn't find transformation for {} and transformation key {}", resource.getPath(), key)));
         return new LDPathTransform(transform.getContent());
     }
 
