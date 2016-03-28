@@ -35,12 +35,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import java.util.stream.Stream;
 import java.util.List;
+import java.util.stream.Stream;
 
+import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.Workspace;
 import javax.jcr.nodetype.NodeType;
 import javax.ws.rs.core.UriBuilder;
 
@@ -80,6 +82,12 @@ public class LDPathTransformTest {
     @Mock
     private NodeService mockNodeService;
 
+    @Mock
+    private Workspace mockWorkspace;
+
+    @Mock
+    private NamespaceRegistry mockRegistry;
+
     private LDPathTransform testObj;
 
     @Before
@@ -88,11 +96,18 @@ public class LDPathTransformTest {
 
         when(mockResource.getNode()).thenReturn(mockNode);
         when(mockNode.getSession()).thenReturn(mockSession);
+        when(mockSession.getWorkspace()).thenReturn(mockWorkspace);
+        when(mockWorkspace.getNamespaceRegistry()).thenReturn(mockRegistry);
 
     }
 
     @Test(expected = TransformNotFoundException.class)
     public void testGetNodeTypeSpecificLdpathProgramForMissingProgram() throws RepositoryException {
+        when(mockRegistry.getPrefixes()).thenReturn(new String[] { "fedora" });
+        when(mockRegistry.getURIs()).thenReturn(new String[] { REPOSITORY_NAMESPACE });
+        when(mockRegistry.getPrefix(REPOSITORY_NAMESPACE)).thenReturn("fedora");
+
+
         final FedoraResource mockConfigNode = mock(FedoraResource.class);
         when(mockNodeService.find(mockSession, CONFIGURATION_FOLDER + "some-program"))
         .thenReturn(mockConfigNode);
@@ -109,15 +124,23 @@ public class LDPathTransformTest {
 
     @Test
     public void testGetNodeTypeSpecificLdpathProgramForNodeTypeProgram() throws RepositoryException {
+        final String customNsUri = "http://example-custom/type#";
+        final String customNsPrefix = "custom";
+
+        when(mockRegistry.getPrefixes()).thenReturn(new String[] { customNsPrefix });
+        when(mockRegistry.getURIs()).thenReturn(new String[] { customNsUri });
+        when(mockRegistry.getPrefix(customNsUri)).thenReturn(customNsPrefix);
+
         final FedoraResource mockConfigNode = mock(FedoraResource.class);
         when(mockNodeService.find(mockSession, CONFIGURATION_FOLDER + "some-program"))
         .thenReturn(mockConfigNode);
         when(mockConfigNode.getPath()).thenReturn(CONFIGURATION_FOLDER + "some-program");
         final FedoraBinary mockChildConfig = mock(FedoraBinary.class);
-        when(mockChildConfig.getPath()).thenReturn(CONFIGURATION_FOLDER + "some-program/custom:type/jcr:content");
+        when(mockChildConfig.getPath())
+                .thenReturn(CONFIGURATION_FOLDER + "some-program/" + customNsPrefix + ":type/jcr:content");
         when(mockConfigNode.getChildren()).thenReturn(Stream.of(mockChildConfig));
 
-        final URI mockRdfType = UriBuilder.fromUri("custom:type").build();
+        final URI mockRdfType = UriBuilder.fromUri(customNsUri + "type").build();
         when(mockResource.getTypes()).thenReturn(Arrays.asList(mockRdfType));
 
         when(mockChildConfig.getContent()).thenReturn(mockInputStream);

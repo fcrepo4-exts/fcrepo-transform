@@ -36,8 +36,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.stream.Stream;
-
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.jcr.RepositoryException;
@@ -112,14 +110,10 @@ public class FedoraTransform extends ContentExposingResource {
         final Session internalSession = sessions.getInternalSession();
         try {
 
-            // containerService.findOrCreate(internalSession, "/fedora:system/fedora:transform");
-
             final FedoraResource resource =
                     containerService.findOrCreate(internalSession, CONFIGURATION_FOLDER + "default");
-            LOGGER.debug("Transforming resource: {}", resource.getPath());
+            LOGGER.debug("Transformation default resource: {}", resource.getPath());
 
-            final Stream<FedoraResource> children = resource.getChildren();
-            children.forEach(child -> LOGGER.debug("Child is {}", child.getPath()));
             if (!resource.getChildren().anyMatch(child -> child.getPath() == DEFAULT_TRANSFORM_RESOURCE)) {
                 LOGGER.debug("Uploading the stream to {}", DEFAULT_TRANSFORM_RESOURCE);
                 final FedoraBinary base = binaryService.findOrCreate(internalSession, DEFAULT_TRANSFORM_RESOURCE);
