@@ -82,7 +82,7 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
     public static LDPathTransform getResourceTransform(final FedoraResource resource, final NodeService nodeService,
             final String key) throws RepositoryException {
 
-        final FedoraResource programResource = nodeService.cast(resource.getNode().getSession().getNode(CONFIGURATION_FOLDER + key));
+        final FedoraResource programResource = nodeService.find(resource.getNode().getSession(), CONFIGURATION_FOLDER + key);
     
         LOGGER.debug("Found program resource: {}", programResource.getPath());
     
@@ -92,11 +92,10 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
         
         final List<String> rdfStringTypes = rdfTypes.stream().map(type -> programResource.getPath() + "/" + type.toString().replace( REPOSITORY_NAMESPACE, "fedora:") + "/jcr:content").collect(Collectors.toList());
         
-        programResource.getChildren().forEach(x -> LOGGER.debug("programResource child {}", x));
-        rdfStringTypes.stream().forEach(x -> LOGGER.debug("rdfType {}",x));
-    
-        final FedoraBinary transform = (FedoraBinary) programResource.getChildren().
-            filter(child -> rdfStringTypes.contains(child.getPath())).findFirst()
+        final FedoraBinary transform = (FedoraBinary) programResource.getChildren()
+            .peek(child -> LOGGER.debug("programResource child path is {}", child.getPath()))
+            .filter(child -> rdfStringTypes.contains(child.getPath()))
+            .findFirst()
             .orElseThrow(() -> new TransformNotFoundException(String.format("Couldn't find transformation for {} and transformation key {}", resource.getPath(), key)));
 
         return new LDPathTransform(transform.getContent());
