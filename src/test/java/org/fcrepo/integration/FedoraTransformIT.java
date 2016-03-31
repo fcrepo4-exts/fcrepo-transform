@@ -56,7 +56,7 @@ public class FedoraTransformIT extends AbstractResourceIT {
     private final String DATE_TIME_REGEX = "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z";
 
     @Test
-    public void testLdpathWithConfiguredProgram() throws IOException {
+    public void testLdpathWithDefaultProgram() throws IOException {
 
         final String pid = "testLdpathWithConfiguredProgram-" + randomUUID();
         createObject(pid);
@@ -71,6 +71,43 @@ public class FedoraTransformIT extends AbstractResourceIT {
 
         assertEquals("Failed to retrieve correct identifier in JSON!", serverAddress + "/" + pid,
                 rootNode.get(0).get("id").elements().next().asText());
+
+        final JsonNode creationDateJson = rootNode.get(0).get("created");
+        assertNotNull(creationDateJson);
+
+        final JsonNode dateNode = creationDateJson.get(0);
+        assertNotNull(dateNode);
+        assertTrue(dateNode.asText() + " should be of format: " + DATE_TIME_REGEX,
+                dateNode.asText().matches(DATE_TIME_REGEX));
+
+    }
+
+    @Test
+    public void testLdpathWithDeluxeProgram() throws IOException {
+
+        final String pid = "testLdpathWithDeluxeProgram-" + randomUUID();
+        createObject(pid);
+        final HttpGet postLdpathProgramRequest
+                = new HttpGet(serverAddress + "/" + pid + "/fcr:transform/deluxe");
+        final HttpResponse response = client.execute(postLdpathProgramRequest);
+        assertEquals(200, response.getStatusLine().getStatusCode());
+        final String content = EntityUtils.toString(response.getEntity());
+        logger.debug("Retrieved ldpath feed:\n" + content);
+
+        final JsonNode rootNode = new ObjectMapper().readTree(new JsonFactory().createParser(content));
+
+        assertEquals("Failed to retrieve correct identifier in JSON!", serverAddress + "/" + pid,
+                rootNode.get(0).get("id").elements().next().asText());
+
+        assertNotNull(rootNode.get(0).get("createdBy"));
+        assertNotNull(rootNode.get(0).get("hasParent"));
+        assertNotNull(rootNode.get(0).get("hasVersions"));
+        assertNotNull(rootNode.get(0).get("lastModified"));
+        assertNotNull(rootNode.get(0).get("lastModifiedBy"));
+        assertNotNull(rootNode.get(0).get("numberOfChildren"));
+        assertNotNull(rootNode.get(0).get("type"));
+        assertNotNull(rootNode.get(0).get("prefLabel"));
+        assertNotNull(rootNode.get(0).get("altLabel"));
 
         final JsonNode creationDateJson = rootNode.get(0).get("created");
         assertNotNull(creationDateJson);
