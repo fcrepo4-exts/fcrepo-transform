@@ -72,6 +72,15 @@ public class FedoraTransformIT extends AbstractResourceIT {
         assertEquals("Failed to retrieve correct identifier in JSON!", serverAddress + "/" + pid,
                 rootNode.get(0).get("id").elements().next().asText());
 
+        assertNotNull(rootNode.get(0).get("createdBy"));
+        assertNotNull(rootNode.get(0).get("hasParent"));
+        assertNotNull(rootNode.get(0).get("lastModified"));
+        assertNotNull(rootNode.get(0).get("lastModifiedBy"));
+        assertNotNull(rootNode.get(0).get("numberOfChildren"));
+        assertNotNull(rootNode.get(0).get("type"));
+        assertNotNull(rootNode.get(0).get("prefLabel"));
+        assertNotNull(rootNode.get(0).get("altLabel"));
+
         final JsonNode creationDateJson = rootNode.get(0).get("created");
         assertNotNull(creationDateJson);
 
