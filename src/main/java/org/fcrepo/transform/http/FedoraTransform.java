@@ -114,7 +114,8 @@ public class FedoraTransform extends ContentExposingResource {
         final Session internalSession = sessions.getInternalSession();
         try {
 
-            // containerService.findOrCreate(internalSession, "/fedora:system/fedora:transform");
+            // Create this resource or it becomes a PairTree which is not referenceable.
+            containerService.findOrCreate(internalSession, "/fedora:system/fedora:transform");
             final Map<String, String> transformations = of(
                     "default", "/ldpath/default/ldpath_program.txt",
                     "deluxe", "/ldpath/deluxe/ldpath_program.txt");
