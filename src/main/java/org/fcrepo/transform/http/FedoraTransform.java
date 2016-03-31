@@ -109,7 +109,8 @@ public class FedoraTransform extends ContentExposingResource {
 
         final Session internalSession = sessions.getInternalSession();
         try {
-
+            // Create this resource or it becomes a PairTree which is not referenceable.
+            containerService.findOrCreate(internalSession, "/fedora:system/fedora:transform");
             final FedoraResource resource =
                     containerService.findOrCreate(internalSession, CONFIGURATION_FOLDER + "default");
             LOGGER.debug("Transformation default resource: {}", resource.getPath());
