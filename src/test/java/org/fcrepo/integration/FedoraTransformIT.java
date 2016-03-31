@@ -20,18 +20,23 @@ import static org.fcrepo.transform.transformations.LDPathTransform.APPLICATION_R
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static javax.ws.rs.core.Response.Status.CREATED;
+import static javax.ws.rs.core.Response.Status.OK;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.UUID;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.BasicHttpEntity;
+import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.util.EntityUtils;
-import org.fcrepo.transform.http.responses.JsonObjectProvider;
 import org.junit.Test;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
@@ -61,7 +66,7 @@ public class FedoraTransformIT extends AbstractResourceIT {
         final String pid = "testLdpathWithConfiguredProgram-" + randomUUID();
         createObject(pid);
         final HttpGet postLdpathProgramRequest
-                = new HttpGet(serverAddress + "/" + pid + "/fcr:transform/default");
+        = new HttpGet(serverAddress + "/" + pid + "/fcr:transform/default");
         final HttpResponse response = client.execute(postLdpathProgramRequest);
         assertEquals(200, response.getStatusLine().getStatusCode());
         final String content = EntityUtils.toString(response.getEntity());
@@ -107,5 +112,30 @@ public class FedoraTransformIT extends AbstractResourceIT {
         assertEquals("Failed to retrieve correct identifier in JSON!", serverAddress + "/" + pid, rootNode
                 .get(0).get("id").elements().next().asText());
 
+    }
+
+    @Test
+    public void testMakeReferenceToTransformSpace() throws IOException {
+        final String pid = UUID.randomUUID().toString();
+        createObject(pid);
+
+        final HttpGet getTransformRequest = new HttpGet(serverAddress + "/" + pid + "/fcr:transform/default");
+        try (final CloseableHttpResponse getResponse = (CloseableHttpResponse) client.execute(getTransformRequest)) {
+            assertEquals("Can't get default transform", OK.getStatusCode(),
+                    getResponse.getStatusLine().getStatusCode());
+        }
+
+        final String pid2 = UUID.randomUUID().toString();
+        final HttpPut putReferenceRequest = new HttpPut(serverAddress + "/" + pid2);
+
+        final InputStream turtleFile = this.getClass().getResourceAsStream("/referenceTest.ttl");
+        final InputStreamEntity entity = new InputStreamEntity(turtleFile);
+        putReferenceRequest.setEntity(entity);
+        putReferenceRequest.setHeader("Content-type", "text/turtle");
+
+        try (final CloseableHttpResponse putResponse = (CloseableHttpResponse) client.execute(putReferenceRequest)) {
+            assertEquals("Can't make reference to /fedora:system/fedora:transform", CREATED.getStatusCode(),
+                    putResponse.getStatusLine().getStatusCode());
+        }
     }
 }
