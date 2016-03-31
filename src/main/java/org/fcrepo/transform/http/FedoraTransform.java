@@ -15,9 +15,6 @@
  */
 package org.fcrepo.transform.http;
 
-import static javax.jcr.nodetype.NodeType.NT_BASE;
-import static javax.jcr.nodetype.NodeType.NT_FILE;
-import static javax.jcr.nodetype.NodeType.NT_FOLDER;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.jena.riot.WebContent.contentTypeN3;
 import static org.apache.jena.riot.WebContent.contentTypeNTriples;
@@ -33,15 +30,14 @@ import static org.apache.jena.riot.WebContent.contentTypeTextTSV;
 import static org.apache.jena.riot.WebContent.contentTypeTurtle;
 import static org.fcrepo.transform.transformations.LDPathTransform.APPLICATION_RDF_LDPATH;
 import static org.fcrepo.transform.transformations.LDPathTransform.CONFIGURATION_FOLDER;
-import static org.fcrepo.transform.transformations.LDPathTransform.getNodeTypeTransform;
+import static org.fcrepo.transform.transformations.LDPathTransform.DEFAULT_TRANSFORM_RESOURCE;
+import static org.fcrepo.transform.transformations.LDPathTransform.getResourceTransform;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.IOException;
 import java.io.InputStream;
-
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.ws.rs.Consumes;
@@ -54,10 +50,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import org.fcrepo.http.api.ContentExposingResource;
+import org.fcrepo.kernel.api.exception.InvalidChecksumException;
+import org.fcrepo.kernel.api.models.FedoraBinary;
 import org.fcrepo.kernel.api.models.FedoraResource;
 import org.fcrepo.transform.TransformationFactory;
 import org.jvnet.hk2.annotations.Optional;
-import org.modeshape.jcr.api.JcrTools;
 import org.slf4j.Logger;
 import org.springframework.context.annotation.Scope;
 
@@ -108,26 +105,20 @@ public class FedoraTransform extends ContentExposingResource {
      * @throws SecurityException if security exception occurred
      */
     @PostConstruct
-    public void setUpRepositoryConfiguration() throws RepositoryException, IOException {
+    public void setUpRepositoryConfiguration() throws RepositoryException, IOException, InvalidChecksumException {
 
-        final JcrTools jcrTools = new JcrTools(true);
         final Session internalSession = sessions.getInternalSession();
         try {
-            // register our CND
-            jcrTools.registerNodeTypes(internalSession, "ldpath.cnd");
+            // Create this resource or it becomes a PairTree which is not referenceable.
+            containerService.findOrCreate(internalSession, "/fedora:system/fedora:transform");
+            final FedoraResource resource =
+                    containerService.findOrCreate(internalSession, CONFIGURATION_FOLDER + "default");
+            LOGGER.debug("Transformation default resource: {}", resource.getPath());
 
-            // create the configuration base path
-            jcrTools.findOrCreateNode(internalSession, "/fedora:system/fedora:transform", "fedora:Configuration",
-                    "fedora:NodeTypeConfiguration");
-            final Node node =
-                jcrTools.findOrCreateNode(internalSession, CONFIGURATION_FOLDER + "default", NT_FOLDER, NT_FOLDER);
-            LOGGER.debug("Transforming node: {}", node.getPath());
-
-            // register an initial default program
-            if (!node.hasNode(NT_BASE)) {
-                final Node baseConfig = node.addNode(NT_BASE, NT_FILE);
-                jcrTools.uploadFile(internalSession, baseConfig.getPath(), getClass().getResourceAsStream(
-                        "/ldpath/default/nt_base_ldpath_program.txt"));
+            if (!resource.getChildren().anyMatch(child -> child.getPath() == DEFAULT_TRANSFORM_RESOURCE)) {
+                LOGGER.debug("Uploading the stream to {}", DEFAULT_TRANSFORM_RESOURCE);
+                final FedoraBinary base = binaryService.findOrCreate(internalSession, DEFAULT_TRANSFORM_RESOURCE);
+                base.setContent(getClass().getResourceAsStream("/ldpath/default/nt_base_ldpath_program.txt"), null, null, null, null);
             }
             internalSession.save();
         } finally {
@@ -150,7 +141,7 @@ public class FedoraTransform extends ContentExposingResource {
             throws RepositoryException {
         LOGGER.info("GET transform, '{}', for '{}'", program, externalPath);
 
-        return getNodeTypeTransform(resource().getNode(), program).apply(getResourceTriples());
+        return getResourceTransform(resource(), nodeService, program).apply(getResourceTriples());
 
     }
 
@@ -164,12 +155,12 @@ public class FedoraTransform extends ContentExposingResource {
     @POST
     @Consumes({APPLICATION_RDF_LDPATH, contentTypeSPARQLQuery})
     @Produces({APPLICATION_JSON, contentTypeTextTSV, contentTypeTextCSV,
-            contentTypeSSE, contentTypeTextPlain, contentTypeResultsJSON,
-            contentTypeResultsXML, contentTypeResultsBIO, contentTypeTurtle,
-            contentTypeN3, contentTypeNTriples, contentTypeRDFXML})
+        contentTypeSSE, contentTypeTextPlain, contentTypeResultsJSON,
+        contentTypeResultsXML, contentTypeResultsBIO, contentTypeTurtle,
+        contentTypeN3, contentTypeNTriples, contentTypeRDFXML})
     @Timed
     public Object evaluateTransform(@HeaderParam("Content-Type") final MediaType contentType,
-                                    final InputStream requestBodyStream) {
+            final InputStream requestBodyStream) {
 
         if (transformationFactory == null) {
             transformationFactory = new TransformationFactory();
