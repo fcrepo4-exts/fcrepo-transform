@@ -127,16 +127,16 @@ public class FedoraTransform extends ContentExposingResource {
                     "default", "/ldpath/default/ldpath_program.txt",
                     "deluxe", "/ldpath/deluxe/ldpath_program.txt");
 
-            transformations.entrySet().forEach(entry -> {
+            transformations.forEach((key, value) -> {
                 try {
 
-                    final Node node = jcrTools.findOrCreateNode(internalSession, CONFIGURATION_FOLDER + entry.getKey(), NT_FOLDER, NT_FOLDER);
+                    final Node node = jcrTools.findOrCreateNode(internalSession, CONFIGURATION_FOLDER + key, NT_FOLDER, NT_FOLDER);
                     LOGGER.debug("Transforming node: {}", node.getPath());
 
                     // register an initial default program
                     if (!node.hasNode(NT_BASE)) {
                         final Node baseConfig = node.addNode(NT_BASE, NT_FILE);
-                        jcrTools.uploadFile(internalSession, baseConfig.getPath(), getClass().getResourceAsStream(entry.getValue()));
+                        jcrTools.uploadFile(internalSession, baseConfig.getPath(), getClass().getResourceAsStream(value));
                     }
 
                 } catch (final IOException | RepositoryException ex) {
