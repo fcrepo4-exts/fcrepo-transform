@@ -15,6 +15,7 @@
  */
 package org.fcrepo.transform.http;
 
+import static com.google.common.collect.ImmutableMap.of;
 import static javax.jcr.nodetype.NodeType.NT_BASE;
 import static javax.jcr.nodetype.NodeType.NT_FILE;
 import static javax.jcr.nodetype.NodeType.NT_FOLDER;
@@ -38,6 +39,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -53,8 +55,9 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import org.fcrepo.http.api.ContentExposingResource;
+import org.fcrepo.kernel.api.exception.RepositoryRuntimeException;
 import org.fcrepo.kernel.api.models.FedoraResource;
+import org.fcrepo.http.api.ContentExposingResource;
 import org.fcrepo.transform.TransformationFactory;
 import org.jvnet.hk2.annotations.Optional;
 import org.modeshape.jcr.api.JcrTools;
@@ -119,16 +122,27 @@ public class FedoraTransform extends ContentExposingResource {
             // create the configuration base path
             jcrTools.findOrCreateNode(internalSession, "/fedora:system/fedora:transform", "fedora:Configuration",
                     "fedora:NodeTypeConfiguration");
-            final Node node =
-                jcrTools.findOrCreateNode(internalSession, CONFIGURATION_FOLDER + "default", NT_FOLDER, NT_FOLDER);
-            LOGGER.debug("Transforming node: {}", node.getPath());
 
-            // register an initial default program
-            if (!node.hasNode(NT_BASE)) {
-                final Node baseConfig = node.addNode(NT_BASE, NT_FILE);
-                jcrTools.uploadFile(internalSession, baseConfig.getPath(), getClass().getResourceAsStream(
-                        "/ldpath/default/nt_base_ldpath_program.txt"));
-            }
+            final Map<String, String> transformations = of(
+                    "default", "/ldpath/default/ldpath_program.txt",
+                    "deluxe", "/ldpath/deluxe/ldpath_program.txt");
+
+            transformations.entrySet().forEach(entry -> {
+                try {
+
+                    final Node node = jcrTools.findOrCreateNode(internalSession, CONFIGURATION_FOLDER + entry.getKey(), NT_FOLDER, NT_FOLDER);
+                    LOGGER.debug("Transforming node: {}", node.getPath());
+
+                    // register an initial default program
+                    if (!node.hasNode(NT_BASE)) {
+                        final Node baseConfig = node.addNode(NT_BASE, NT_FILE);
+                        jcrTools.uploadFile(internalSession, baseConfig.getPath(), getClass().getResourceAsStream(entry.getValue()));
+                    }
+
+                } catch (final IOException | RepositoryException ex) {
+                    throw new RepositoryRuntimeException(ex);
+                }
+            });
             internalSession.save();
         } finally {
             internalSession.logout();
