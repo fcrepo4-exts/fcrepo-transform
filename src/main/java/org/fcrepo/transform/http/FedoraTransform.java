@@ -116,6 +116,7 @@ public class FedoraTransform extends ContentExposingResource {
 
             // Create this resource or it becomes a PairTree which is not referenceable.
             containerService.findOrCreate(internalSession, "/fedora:system/fedora:transform");
+
             final Map<String, String> transformations = of(
                     "default", "/ldpath/default/ldpath_program.txt",
                     "deluxe", "/ldpath/deluxe/ldpath_program.txt");
@@ -128,7 +129,7 @@ public class FedoraTransform extends ContentExposingResource {
                 final Stream<FedoraResource> children = resource.getChildren();
                 children.forEach(child -> LOGGER.debug("Child is {}", child.getPath()));
                 final String uploadPath = CONFIGURATION_FOLDER + key + "/fedora:Resource";
-                if (!resource.getChildren().anyMatch(child -> child.getPath() == uploadPath)) {
+                if (!resource.getChildren().anyMatch(child -> child.getPath().equalsIgnoreCase(uploadPath))) {
                     LOGGER.debug("Uploading the stream to {}", uploadPath);
                     final FedoraBinary base = binaryService.findOrCreate(internalSession, uploadPath);
                     try {

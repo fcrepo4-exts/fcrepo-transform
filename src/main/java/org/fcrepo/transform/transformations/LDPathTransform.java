@@ -38,7 +38,6 @@ import javax.jcr.RepositoryException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -94,8 +93,8 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
         final Function<URI, String> namespaceUriToPrefix = x -> {
             final String uriString = x.toString();
             try {
-                for (final String namespace : Arrays.asList(nsRegistry.getURIs())) {
-                    // There is an empty namespace URI and that matches everything.
+                for (final String namespace : nsRegistry.getURIs()) {
+                    // Ignoring zero-length namespaces return the appropriate prefix
                     if (namespace.length() > 0 && uriString.startsWith(namespace)) {
                         return uriString.replace(namespace, nsRegistry.getPrefix(namespace) + ":");
                     }
