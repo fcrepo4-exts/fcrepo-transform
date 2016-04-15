@@ -32,6 +32,7 @@ import static org.apache.jena.riot.WebContent.contentTypeTurtle;
 import static org.fcrepo.transform.transformations.LDPathTransform.APPLICATION_RDF_LDPATH;
 import static org.fcrepo.transform.transformations.LDPathTransform.CONFIGURATION_FOLDER;
 import static org.fcrepo.transform.transformations.LDPathTransform.getResourceTransform;
+import static org.fcrepo.transform.transformations.LDPathTransform.DEFAULT_TRANSFORM_RESOURCE;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.IOException;
@@ -127,7 +128,7 @@ public class FedoraTransform extends ContentExposingResource {
 
                 final Stream<FedoraResource> children = resource.getChildren();
                 children.forEach(child -> LOGGER.debug("Child is {}", child.getPath()));
-                final String uploadPath = CONFIGURATION_FOLDER + key + "/fedora:Resource";
+                final String uploadPath = CONFIGURATION_FOLDER + key + "/" + DEFAULT_TRANSFORM_RESOURCE;
                 if (!resource.getChildren().anyMatch(child -> child.getPath().equalsIgnoreCase(uploadPath))) {
                     LOGGER.debug("Uploading the stream to {}", uploadPath);
                     final FedoraBinary base = binaryService.findOrCreate(internalSession, uploadPath);

@@ -58,8 +58,7 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
 
     public static final String CONFIGURATION_FOLDER = "/fedora:system/fedora:transform/fedora:ldpath/";
 
-    public static final String DEFAULT_TRANSFORM_RESOURCE = CONFIGURATION_FOLDER +
-            "default/fedora:Resource";
+    public static final String DEFAULT_TRANSFORM_RESOURCE = "fedora:Resource";
 
     // TODO: this mime type was made up
     public static final String APPLICATION_RDF_LDPATH = "application/rdf+ldpath";
