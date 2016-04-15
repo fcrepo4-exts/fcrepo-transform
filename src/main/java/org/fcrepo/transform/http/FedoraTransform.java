@@ -106,10 +106,9 @@ public class FedoraTransform extends ContentExposingResource {
      *
      * @throws RepositoryException if repository exception occurred
      * @throws java.io.IOException if IO exception occurred
-     * @throws SecurityException if security exception occurred
      */
     @PostConstruct
-    public void setUpRepositoryConfiguration() throws RepositoryException, IOException, InvalidChecksumException {
+    public void setUpRepositoryConfiguration() throws RepositoryException, IOException {
 
         final Session internalSession = sessions.getInternalSession();
         try {
