@@ -41,12 +41,15 @@ public class JsonObjectProvider implements ContextResolver<ObjectMapper> {
 
     private final ObjectMapper defaultObjectMapper;
 
+    /**
+     * Default constructor
+     */
     public JsonObjectProvider() {
         defaultObjectMapper = createDefaultMapper();
     }
 
     @Override
-    public ObjectMapper getContext(Class<?> aClass) {
+    public ObjectMapper getContext(final Class<?> aClass) {
         LOGGER.debug("Object mapping for: {}", aClass.getCanonicalName());
         return defaultObjectMapper;
     }

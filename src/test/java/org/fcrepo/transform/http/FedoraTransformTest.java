@@ -35,15 +35,12 @@ import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.EnumSet;
 
 import javax.jcr.Node;
 import javax.jcr.Session;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
-import com.hp.hpl.jena.graph.Triple;
-import org.fcrepo.kernel.api.RequiredRdfContext;
 import org.fcrepo.kernel.api.RdfStream;
 import org.fcrepo.kernel.api.identifiers.IdentifierConverter;
 import org.fcrepo.kernel.api.rdf.DefaultRdfStream;
