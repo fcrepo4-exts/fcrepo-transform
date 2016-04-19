@@ -20,7 +20,6 @@ import org.fcrepo.kernel.api.RdfStream;
 import org.fcrepo.kernel.api.models.Container;
 import org.fcrepo.kernel.api.services.ContainerService;
 import org.fcrepo.kernel.modeshape.rdf.impl.DefaultIdentifierTranslator;
-import org.fcrepo.kernel.modeshape.rdf.impl.PropertiesRdfContext;
 import org.fcrepo.transform.transformations.LDPathTransform;
 import org.junit.Before;
 import org.junit.Test;
