@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <artifactId>fcrepo-parent</artifactId>
+    <artifactId>fcrepo</artifactId>
     <groupId>org.fcrepo</groupId>
     <version>4.5.1-SNAPSHOT</version>
   </parent>
@@ -19,7 +19,6 @@
 
   <properties>
     <ldpath.version>3.2.1</ldpath.version>
-    <fcrepo.version>4.5.0</fcrepo.version>
     <jersey.version>2.13</jersey.version>
     <spring.version>4.1.1.RELEASE</spring.version>
     <osgi.import.packages>
@@ -63,7 +62,7 @@
     <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-kernel-api</artifactId>
-      <version>4.5.1-SNAPSHOT</version>
+      <version>${project.version}</version>
       <exclusions>
         <exclusion>
           <groupId>ch.qos.logback</groupId>
@@ -83,14 +82,14 @@
     <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-http-commons</artifactId>
-      <version>4.5.1-SNAPSHOT</version>
+      <version>${project.version}</version>
     </dependency>
 
 
     <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-http-api</artifactId>
-      <version>4.5.1-SNAPSHOT</version>
+      <version>${project.version}</version>
     </dependency>
 
     <dependency>
@@ -118,7 +117,7 @@
     <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-http-commons</artifactId>
-      <version>4.5.1-SNAPSHOT</version>
+      <version>${project.version}</version>
       <scope>test</scope>
       <type>test-jar</type>
     </dependency>
@@ -126,7 +125,7 @@
     <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-kernel-modeshape</artifactId>
-      <version>4.5.1-SNAPSHOT</version>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -139,14 +138,14 @@
     <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-configs</artifactId>
-      <version>4.5.1-SNAPSHOT</version>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-auth-common</artifactId>
-      <version>4.5.1-SNAPSHOT</version>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -290,7 +289,7 @@
       <dependency>
         <groupId>org.fcrepo</groupId>
         <artifactId>fcrepo-jcr-bom</artifactId>
-        <version>${fcrepo.version}</version>
+        <version>${project.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
