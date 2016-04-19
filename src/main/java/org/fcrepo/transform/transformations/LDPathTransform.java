@@ -74,6 +74,14 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
         this.query = query;
     }
 
+    /**
+     * Pull a resource-type specific transform for the specified key
+     * @param resource the resource
+     * @param nodeService a nodeService
+     * @param key the key
+     * @return resource-type specific transform
+     * @throws RepositoryException if repository exception occurred
+     */
     public static LDPathTransform getResourceTransform(final FedoraResource resource, final NodeService nodeService,
             final String key) throws RepositoryException {
 
@@ -111,20 +119,22 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
         final FedoraBinary transform = (FedoraBinary) transformResource.getChildren()
                 .filter(child -> rdfStringTypes.contains(child.getPath()))
                 .findFirst()
-                .orElseThrow(() -> new TransformNotFoundException(String.format("Couldn't find transformation for {} and transformation key {}", resource.getPath(), key)));
+                .orElseThrow(() -> new TransformNotFoundException(
+                    String.format("Couldn't find transformation for {} and transformation key {}",
+                    resource.getPath(), key)));
         return new LDPathTransform(transform.getContent());
     }
 
     @Override
     public List<Map<String, Collection<Object>>> apply(final RdfStream stream) {
         final LDPath<RDFNode> ldpathForResource =
-                getLdpathResource(stream);
+            getLdpathResource(stream);
 
         final Resource context = createResource(stream.topic().getURI());
 
         try {
             return ImmutableList.of(unsafeCast(
-                    ldpathForResource.programQuery(context, new InputStreamReader(query))));
+                ldpathForResource.programQuery(context, new InputStreamReader(query))));
         } catch (final LDPathParseException e) {
             throw new RepositoryRuntimeException(e);
         }

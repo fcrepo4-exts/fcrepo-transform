@@ -21,24 +21,4 @@ public class TransformNotFoundException extends RepositoryRuntimeException {
         super(msg);
     }
 
-    /**
-     * Ordinary constructor.
-     *
-     * @param rootCause the root cause
-     */
-    public TransformNotFoundException(final Throwable rootCause) {
-        super(rootCause);
-    }
-
-    /**
-     * Ordinary constructor.
-     *
-     * @param msg the message
-     * @param rootCause the root cause
-     */
-    public TransformNotFoundException(final String msg, final Throwable rootCause) {
-        super(msg, rootCause);
-    }
-
-
 }

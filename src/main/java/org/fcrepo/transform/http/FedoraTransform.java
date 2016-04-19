@@ -175,12 +175,12 @@ public class FedoraTransform extends ContentExposingResource {
     @POST
     @Consumes({APPLICATION_RDF_LDPATH, contentTypeSPARQLQuery})
     @Produces({APPLICATION_JSON, contentTypeTextTSV, contentTypeTextCSV,
-        contentTypeSSE, contentTypeTextPlain, contentTypeResultsJSON,
-        contentTypeResultsXML, contentTypeResultsBIO, contentTypeTurtle,
-        contentTypeN3, contentTypeNTriples, contentTypeRDFXML})
+            contentTypeSSE, contentTypeTextPlain, contentTypeResultsJSON,
+            contentTypeResultsXML, contentTypeResultsBIO, contentTypeTurtle,
+            contentTypeN3, contentTypeNTriples, contentTypeRDFXML})
     @Timed
     public Object evaluateTransform(@HeaderParam("Content-Type") final MediaType contentType,
-            final InputStream requestBodyStream) {
+                                    final InputStream requestBodyStream) {
 
         if (transformationFactory == null) {
             transformationFactory = new TransformationFactory();
