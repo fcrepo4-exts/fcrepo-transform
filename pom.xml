@@ -18,6 +18,8 @@
   <description>The Fedora Commons repository transformations module: Provides facilities to use SPARQL or LDPath to tranform repository RDF into desired forms.</description>
 
   <properties>
+    <project_name>fcrepo-transform</project_name>
+    <project_organization>fcrepo4-exts</project_organization>
     <ldpath.version>3.2.1</ldpath.version>
     <jersey.version>2.13</jersey.version>
     <spring.version>4.1.1.RELEASE</spring.version>
@@ -51,9 +53,9 @@
   </properties>
 
     <scm>
-    <connection>scm:git:git://github.com/fcrepo4-exts/${project.artifactId}.git</connection>
-    <developerConnection>scm:git:git@github.com:fcrepo4-exts/${project.artifactId}.git</developerConnection>
-    <url>https://github.com/fcrepo4-exts/fcrepo-transform</url>
+    <connection>scm:git:git://github.com/${project_organization}/${project_name}.git</connection>
+    <developerConnection>scm:git:git@github.com:${project_organization}/${project_name}.git</developerConnection>
+    <url>https://github.com/${project_organization}/${project_name}</url>
     <tag>HEAD</tag>
   </scm>
 
