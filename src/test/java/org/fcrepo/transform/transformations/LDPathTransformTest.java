@@ -51,6 +51,7 @@ import org.fcrepo.kernel.api.models.FedoraBinary;
 import org.fcrepo.kernel.api.models.FedoraResource;
 import org.fcrepo.kernel.api.rdf.DefaultRdfStream;
 import org.fcrepo.kernel.api.services.NodeService;
+import org.fcrepo.kernel.modeshape.FedoraResourceImpl;
 import org.fcrepo.transform.TransformNotFoundException;
 
 import org.junit.Before;
@@ -68,7 +69,7 @@ public class LDPathTransformTest {
     private Node mockNode;
 
     @Mock
-    private FedoraResource mockResource;
+    private FedoraResourceImpl mockResource;
 
     @Mock
     private Session mockSession;
