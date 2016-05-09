@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 
 import static com.hp.hpl.jena.rdf.model.ResourceFactory.createResource;
 import static org.fcrepo.kernel.api.RdfCollectors.toModel;
+import static org.fcrepo.kernel.modeshape.utils.FedoraTypesUtils.getJcrNode;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -86,7 +87,7 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
             final String key) throws RepositoryException {
 
         final FedoraResource transformResource =
-                nodeService.find(resource.getNode().getSession(), CONFIGURATION_FOLDER + key);
+                nodeService.find(getJcrNode(resource).getSession(), CONFIGURATION_FOLDER + key);
 
         LOGGER.debug("Found transform resource: {}", transformResource.getPath());
 
@@ -94,7 +95,7 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
 
         LOGGER.debug("Discovered rdf types: {}", rdfTypes);
 
-        final NamespaceRegistry nsRegistry = resource.getNode().getSession().getWorkspace().getNamespaceRegistry();
+        final NamespaceRegistry nsRegistry = getJcrNode(resource).getSession().getWorkspace().getNamespaceRegistry();
 
         // convert rdf:type with URI namespace to prefixed namespace
         final Function<URI, String> namespaceUriToPrefix = x -> {

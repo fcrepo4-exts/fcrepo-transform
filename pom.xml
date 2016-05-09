@@ -25,6 +25,7 @@
     <spring.version>4.1.1.RELEASE</spring.version>
     <osgi.import.packages>
       org.fcrepo.kernel.api,
+      org.fcrepo.kernel.modeshape.utils,
       org.fcrepo.http.api,
 
       javax.annotation,
@@ -100,7 +101,6 @@
       <version>${project.version}</version>
     </dependency>
 
-
     <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-http-api</artifactId>
@@ -141,7 +141,6 @@
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-kernel-modeshape</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
     </dependency>
 
     <dependency>

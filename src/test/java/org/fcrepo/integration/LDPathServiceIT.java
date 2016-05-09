@@ -41,6 +41,7 @@ import java.util.List;
 
 import static org.fcrepo.kernel.api.RequiredRdfContext.PROPERTIES;
 import static org.fcrepo.kernel.api.RdfLexicon.REPOSITORY_NAMESPACE;
+import static org.fcrepo.kernel.modeshape.utils.FedoraTypesUtils.getJcrNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -73,7 +74,7 @@ public class LDPathServiceIT {
         final Session session = repo.login();
 
         final Container object = containerService.findOrCreate(session, "/testObject");
-        object.getNode().setProperty("dc:title", "some-title");
+        getJcrNode(object).setProperty("dc:title", "some-title");
 
         final String s = "@prefix dces : <http://purl.org/dc/elements/1.1/>\n" +
                        "@prefix fcrepo : <" + REPOSITORY_NAMESPACE + ">\n" +
