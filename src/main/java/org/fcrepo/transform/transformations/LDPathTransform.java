@@ -114,7 +114,7 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
         };
 
         final List<String> rdfStringTypes = rdfTypes.stream().map(namespaceUriToPrefix)
-                .map(stringType -> transformResource.getPath() + "/" + stringType + "/jcr:content")
+                .map(stringType -> transformResource.getPath() + "/" + stringType)
                 .collect(Collectors.toList());
 
         final FedoraBinary transform = (FedoraBinary) transformResource.getChildren()

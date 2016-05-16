@@ -138,7 +138,7 @@ public class LDPathTransformTest {
         when(mockConfigNode.getPath()).thenReturn(CONFIGURATION_FOLDER + "some-program");
         final FedoraBinary mockChildConfig = mock(FedoraBinary.class);
         when(mockChildConfig.getPath())
-                .thenReturn(CONFIGURATION_FOLDER + "some-program/" + customNsPrefix + ":type/jcr:content");
+                .thenReturn(CONFIGURATION_FOLDER + "some-program/" + customNsPrefix + ":type");
         when(mockConfigNode.getChildren()).thenReturn(Stream.of(mockChildConfig));
 
         final URI mockRdfType = UriBuilder.fromUri(customNsUri + "type").build();
