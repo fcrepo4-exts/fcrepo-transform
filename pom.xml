@@ -21,8 +21,6 @@
     <project_name>fcrepo-transform</project_name>
     <project_organization>fcrepo4-exts</project_organization>
     <ldpath.version>3.2.1</ldpath.version>
-    <jersey.version>2.22.2</jersey.version>
-    <spring.version>4.1.1.RELEASE</spring.version>
     <osgi.import.packages>
       org.fcrepo.kernel.api,
       org.fcrepo.kernel.modeshape.utils,
