@@ -23,7 +23,6 @@
     <ldpath.version>3.2.1</ldpath.version>
     <osgi.import.packages>
       org.fcrepo.kernel.api,
-      org.fcrepo.kernel.modeshape.utils,
       org.fcrepo.http.api,
 
       javax.annotation,
@@ -36,14 +35,13 @@
       org.apache.jena.riot,
       org.apache.marmotta.ldpath.*,
       org.jvnet.hk2.annotations,
-      org.modeshape.jcr.api,
       org.springframework.stereotype,
       org.springframework.context.*,
 
       com.codahale.metrics.*,
       com.google.common.*,
       com.hp.hpl.jena.*,
-      
+
       *
     </osgi.import.packages>
     <osgi.export.packages>
@@ -134,11 +132,12 @@
       <scope>test</scope>
       <type>test-jar</type>
     </dependency>
-    
+
     <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-kernel-modeshape</artifactId>
       <version>${project.version}</version>
+      <scope>test</scope>
     </dependency>
 
     <dependency>

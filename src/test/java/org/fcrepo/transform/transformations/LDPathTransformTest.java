@@ -120,7 +120,7 @@ public class LDPathTransformTest {
         rdfTypes.add(mockRdfType);
         when(mockResource.getTypes()).thenReturn(rdfTypes);
 
-        getResourceTransform(mockResource, mockNodeService, "some-program");
+        getResourceTransform(mockResource, mockSession, mockNodeService, "some-program");
     }
 
     @Test
@@ -147,7 +147,7 @@ public class LDPathTransformTest {
         when(mockChildConfig.getContent()).thenReturn(mockInputStream);
 
         final LDPathTransform nodeTypeSpecificLdpathProgramStream =
-                getResourceTransform(mockResource, mockNodeService, "some-program");
+                getResourceTransform(mockResource, mockSession, mockNodeService, "some-program");
 
         assertEquals(new LDPathTransform(mockInputStream), nodeTypeSpecificLdpathProgramStream);
     }
