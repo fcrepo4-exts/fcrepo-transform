@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -47,7 +48,6 @@ import java.util.stream.Collectors;
 
 import static com.hp.hpl.jena.rdf.model.ResourceFactory.createResource;
 import static org.fcrepo.kernel.api.RdfCollectors.toModel;
-import static org.fcrepo.kernel.modeshape.utils.FedoraTypesUtils.getJcrNode;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -78,16 +78,16 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
     /**
      * Pull a resource-type specific transform for the specified key
      * @param resource the resource
+     * @param session the session
      * @param nodeService a nodeService
      * @param key the key
      * @return resource-type specific transform
      * @throws RepositoryException if repository exception occurred
      */
-    public static LDPathTransform getResourceTransform(final FedoraResource resource, final NodeService nodeService,
-            final String key) throws RepositoryException {
+    public static LDPathTransform getResourceTransform(final FedoraResource resource, final Session session,
+            final NodeService nodeService, final String key) throws RepositoryException {
 
-        final FedoraResource transformResource =
-                nodeService.find(getJcrNode(resource).getSession(), CONFIGURATION_FOLDER + key);
+        final FedoraResource transformResource = nodeService.find(session, CONFIGURATION_FOLDER + key);
 
         LOGGER.debug("Found transform resource: {}", transformResource.getPath());
 
@@ -95,7 +95,7 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
 
         LOGGER.debug("Discovered rdf types: {}", rdfTypes);
 
-        final NamespaceRegistry nsRegistry = getJcrNode(resource).getSession().getWorkspace().getNamespaceRegistry();
+        final NamespaceRegistry nsRegistry = session.getWorkspace().getNamespaceRegistry();
 
         // convert rdf:type with URI namespace to prefixed namespace
         final Function<URI, String> namespaceUriToPrefix = x -> {

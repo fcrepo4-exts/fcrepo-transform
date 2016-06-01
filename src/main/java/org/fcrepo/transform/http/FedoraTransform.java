@@ -161,7 +161,7 @@ public class FedoraTransform extends ContentExposingResource {
             throws RepositoryException {
         LOGGER.info("GET transform, '{}', for '{}'", program, externalPath);
 
-        return getResourceTransform(resource(), nodeService, program).apply(getResourceTriples());
+        return getResourceTransform(resource(), session, nodeService, program).apply(getResourceTriples());
 
     }
 
