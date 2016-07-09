@@ -16,3 +16,5 @@ fcrepo4-data/
 .classpath
 .project
 *~
+.idea/
+*.iml
