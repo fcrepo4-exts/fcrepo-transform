@@ -18,7 +18,6 @@
 package org.fcrepo.transform.http.responses;
 
 import static com.hp.hpl.jena.query.ResultSetFormatter.output;
-import static com.hp.hpl.jena.query.ResultSetFormatter.toModel;
 import static com.hp.hpl.jena.sparql.resultset.ResultsFormat.FMT_RDF_NT;
 import static com.hp.hpl.jena.sparql.resultset.ResultsFormat.FMT_RDF_TTL;
 import static com.hp.hpl.jena.sparql.resultset.ResultsFormat.FMT_RDF_XML;
@@ -53,7 +52,7 @@ import javax.ws.rs.ext.Provider;
 import org.apache.jena.riot.Lang;
 
 import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.sparql.resultset.ResultsFormat;
 
 /**
@@ -105,8 +104,7 @@ public class ResultSetStreamingOutput implements MessageBodyWriter<ResultSet> {
 
         if (resultsFormat == FMT_UNKNOWN) {
             final String format = contentTypeToLang(mediaType.toString()).getName().toUpperCase();
-            final Model model = toModel(resultSet);
-            model.write(entityStream, format);
+            ResultSetFormatter.output(entityStream, resultSet, ResultsFormat.lookup(format));
         } else {
             output(entityStream, resultSet, resultsFormat);
         }

@@ -55,12 +55,24 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.marmotta.ldcache.api.LDCachingBackend;
+import org.apache.marmotta.ldcache.model.CacheConfiguration;
+import org.apache.marmotta.ldcache.services.LDCache;
+import org.apache.marmotta.ldclient.model.ClientConfiguration;
+import org.apache.marmotta.ldpath.backend.linkeddata.LDCacheBackend;
 import org.fcrepo.http.api.ContentExposingResource;
 import org.fcrepo.kernel.api.exception.InvalidChecksumException;
 import org.fcrepo.kernel.api.exception.RepositoryRuntimeException;
 import org.fcrepo.kernel.api.models.FedoraBinary;
 import org.fcrepo.kernel.api.models.FedoraResource;
-import org.fcrepo.transform.TransformationFactory;
+import org.fcrepo.transform.ldcache.FedoraEndpoint;
+import org.fcrepo.transform.transformations.LDPathTransform;
+import org.fcrepo.transform.transformations.SparqlQueryTransform;
 import org.jvnet.hk2.annotations.Optional;
 import org.slf4j.Logger;
 import org.springframework.context.annotation.Scope;
@@ -84,8 +96,21 @@ public class FedoraTransform extends ContentExposingResource {
     private static final Logger LOGGER = getLogger(FedoraTransform.class);
 
     @Inject
+    private LDCachingBackend backend;
+
+    @Inject
     @Optional
-    private TransformationFactory transformationFactory;
+    private Credentials credentials;
+
+    @Inject
+    @Optional
+    private AuthScope authScope;
+
+    @Inject
+    @Optional
+    private FedoraEndpoint fedoraEndpoint;
+
+    private LDCacheBackend ldcacheBackend;
 
     @PathParam("path") protected String externalPath;
 
@@ -143,6 +168,28 @@ public class FedoraTransform extends ContentExposingResource {
             });
 
             internalSession.save();
+
+            // Initialize the LDCache store
+            LOGGER.info("Initializing LDCache backend");
+            final ClientConfiguration client = new ClientConfiguration();
+
+            if (fedoraEndpoint != null) {
+                client.addEndpoint(fedoraEndpoint);
+            }
+
+            if (authScope != null && credentials != null) {
+                final CredentialsProvider credsProvider = new BasicCredentialsProvider();
+                credsProvider.setCredentials(authScope, credentials);
+                client.setHttpClient(HttpClients.custom()
+                        .setDefaultCredentialsProvider(credsProvider)
+                        .useSystemProperties().build());
+            } else {
+                LOGGER.info("LDCache client configured to access Fedora without authentication");
+            }
+            final CacheConfiguration config = new CacheConfiguration(client);
+            final LDCache cache = new LDCache(config, backend);
+            this.ldcacheBackend = new LDCacheBackend(cache);
+
         } finally {
             internalSession.logout();
         }
@@ -163,7 +210,8 @@ public class FedoraTransform extends ContentExposingResource {
             throws RepositoryException {
         LOGGER.info("GET transform, '{}', for '{}'", program, externalPath);
 
-        return getResourceTransform(resource(), session, nodeService, program).apply(getResourceTriples());
+        return getResourceTransform(resource(), session, nodeService, ldcacheBackend, program)
+                    .apply(getResourceTriples());
 
     }
 
@@ -184,13 +232,15 @@ public class FedoraTransform extends ContentExposingResource {
     public Object evaluateTransform(@HeaderParam("Content-Type") final MediaType contentType,
                                     final InputStream requestBodyStream) {
 
-        if (transformationFactory == null) {
-            transformationFactory = new TransformationFactory();
-        }
         LOGGER.info("POST transform for '{}'", externalPath);
-
-        return transformationFactory.getTransform(contentType, requestBodyStream).apply(getResourceTriples());
-
+        if (contentType.toString().equals(contentTypeSPARQLQuery)) {
+            return new SparqlQueryTransform(requestBodyStream).apply(getResourceTriples());
+        } else if (contentType.toString().equals(APPLICATION_RDF_LDPATH)) {
+            return new LDPathTransform(ldcacheBackend, requestBodyStream).apply(getResourceTriples());
+        } else {
+            throw new UnsupportedOperationException(
+                    "No transform type exists for media type " + contentType + "!");
+        }
     }
 
     @Override
