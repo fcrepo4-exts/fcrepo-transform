@@ -39,6 +39,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -63,6 +64,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.marmotta.ldcache.api.LDCachingBackend;
 import org.apache.marmotta.ldcache.model.CacheConfiguration;
 import org.apache.marmotta.ldcache.services.LDCache;
+import org.apache.marmotta.ldclient.api.endpoint.Endpoint;
 import org.apache.marmotta.ldclient.model.ClientConfiguration;
 import org.apache.marmotta.ldpath.backend.linkeddata.LDCacheBackend;
 import org.fcrepo.http.api.ContentExposingResource;
@@ -70,7 +72,6 @@ import org.fcrepo.kernel.api.exception.InvalidChecksumException;
 import org.fcrepo.kernel.api.exception.RepositoryRuntimeException;
 import org.fcrepo.kernel.api.models.FedoraBinary;
 import org.fcrepo.kernel.api.models.FedoraResource;
-import org.fcrepo.transform.ldcache.FedoraEndpoint;
 import org.fcrepo.transform.transformations.LDPathTransform;
 import org.fcrepo.transform.transformations.SparqlQueryTransform;
 import org.jvnet.hk2.annotations.Optional;
@@ -108,7 +109,7 @@ public class FedoraTransform extends ContentExposingResource {
 
     @Inject
     @Optional
-    private FedoraEndpoint fedoraEndpoint;
+    private List<Endpoint> endpoints;
 
     private LDCacheBackend ldcacheBackend;
 
@@ -173,8 +174,10 @@ public class FedoraTransform extends ContentExposingResource {
             LOGGER.info("Initializing LDCache backend");
             final ClientConfiguration client = new ClientConfiguration();
 
-            if (fedoraEndpoint != null) {
-                client.addEndpoint(fedoraEndpoint);
+            if (endpoints != null) {
+                endpoints.forEach(endpoint -> {
+                    client.addEndpoint(endpoint);
+                });
             }
 
             if (authScope != null && credentials != null) {
