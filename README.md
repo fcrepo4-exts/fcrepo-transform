@@ -85,7 +85,7 @@ If your Fedora repository has authorization enabled, you will need to provide cr
 </bean>
 ```
 
-If you customize the spring configuration, it is generally recommended to put your customization in a directory outside of the JVM container, such as `/etc/fcrepo/spring/transform.xml`.
+If you customize the spring configuration, it is generally recommended to put your customization in a separate, system directory such as `/etc/fcrepo/spring/transform.xml`.
 Then, you can add the following to your `JAVA_OPTS`: `-Dfcrepo.spring.transform.configuration=file:/etc/fcrepo/spring/transform.xml`.
 
 ## Maintainers
