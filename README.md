@@ -54,8 +54,8 @@ transform context. For instance, adding support for a Getty endpoint could inclu
   <!-- add support for Getty vocabs -->
   <bean class="org.apache.marmotta.ldclient.endpoint.rdf.SPARQLEndpoint">
     <constructor-arg index="0" type="java.lang.String" value="Getty Vocabs"/>
-    <constructor-arg index="1" type="http://vocab.getty.edu/sparql"/>
-    <constructor-arg index="2" type="^http://vocab\\.getty\\.edu/.*"/>
+    <constructor-arg index="1" type="java.lang.String" value="http://vocab.getty.edu/sparql"/>
+    <constructor-arg index="2" type="java.lang.String" value="^http://vocab\\.getty\\.edu/.*"/>
   </bean>
 
 
