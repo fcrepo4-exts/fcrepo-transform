@@ -36,8 +36,6 @@ import static org.fcrepo.transform.transformations.LDPathTransform.CONFIGURATION
 import static org.fcrepo.transform.transformations.LDPathTransform.getResourceTransform;
 import static org.fcrepo.transform.transformations.LDPathTransform.DEFAULT_TRANSFORM_RESOURCE;
 import static org.slf4j.LoggerFactory.getLogger;
-
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -76,6 +74,7 @@ import org.fcrepo.transform.transformations.LDPathTransform;
 import org.fcrepo.transform.transformations.SparqlQueryTransform;
 import org.jvnet.hk2.annotations.Optional;
 import org.slf4j.Logger;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
 
 import com.codahale.metrics.annotation.Timed;
@@ -107,10 +106,6 @@ public class FedoraTransform extends ContentExposingResource {
     @Optional
     private AuthScope authScope;
 
-    @Inject
-    @Optional
-    private List<Endpoint> endpoints;
-
     private LDCacheBackend ldcacheBackend;
 
     @PathParam("path") protected String externalPath;
@@ -131,13 +126,12 @@ public class FedoraTransform extends ContentExposingResource {
 
 
     /**
-     * Register the LDPath configuration tree in JCR
+     * Register the LDCache endpoints and register the LDPath configuration tree in JCR
      *
      * @throws RepositoryException if repository exception occurred
-     * @throws java.io.IOException if IO exception occurred
      */
     @PostConstruct
-    public void setUpRepositoryConfiguration() throws RepositoryException, IOException {
+    public void setUpConfiguration() throws RepositoryException {
 
         final Session internalSession = sessions.getInternalSession();
         try {
@@ -174,12 +168,6 @@ public class FedoraTransform extends ContentExposingResource {
             LOGGER.info("Initializing LDCache backend");
             final ClientConfiguration client = new ClientConfiguration();
 
-            if (endpoints != null) {
-                endpoints.forEach(endpoint -> {
-                    client.addEndpoint(endpoint);
-                });
-            }
-
             if (authScope != null && credentials != null) {
                 final CredentialsProvider credsProvider = new BasicCredentialsProvider();
                 credsProvider.setCredentials(authScope, credentials);
@@ -192,6 +180,15 @@ public class FedoraTransform extends ContentExposingResource {
             final CacheConfiguration config = new CacheConfiguration(client);
             final LDCache cache = new LDCache(config, backend);
             this.ldcacheBackend = new LDCacheBackend(cache);
+
+            // TODO Make this work type-safely via annotations.
+            final ApplicationContext context = org.springframework.web.context.ContextLoader
+                    .getCurrentWebApplicationContext();
+            if (context != null) {
+                final List<Endpoint> endpoints = context.getBean("endpoints", List.class);
+                LOGGER.debug("Adding linked data endpoints {}", endpoints);
+                endpoints.forEach(client::addEndpoint);
+            }
 
         } finally {
             internalSession.logout();
