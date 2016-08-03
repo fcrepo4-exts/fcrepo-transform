@@ -18,12 +18,12 @@
 package org.fcrepo.transform.transformations;
 
 import com.google.common.collect.ImmutableList;
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.Resource;
 
 import org.apache.marmotta.ldpath.LDPath;
-import org.apache.marmotta.ldpath.backend.jena.GenericJenaBackend;
+import org.apache.marmotta.ldpath.backend.linkeddata.LDCacheBackend;
 import org.apache.marmotta.ldpath.exception.LDPathParseException;
+import org.openrdf.model.Value;
+import org.openrdf.model.impl.URIImpl;
 
 import org.fcrepo.kernel.api.RdfStream;
 import org.fcrepo.kernel.api.exception.RepositoryRuntimeException;
@@ -48,8 +48,6 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.hp.hpl.jena.rdf.model.ResourceFactory.createResource;
-import static org.fcrepo.kernel.api.RdfCollectors.toModel;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -65,16 +63,21 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
 
     // TODO: this mime type was made up
     public static final String APPLICATION_RDF_LDPATH = "application/rdf+ldpath";
+
     private final InputStream query;
+
+    private final LDCacheBackend backend;
 
     private static final Logger LOGGER = getLogger(LDPathTransform.class);
 
     /**
      * Construct a new Transform from the InputStream
+     * @param backend the LDCache backend
      * @param query the query
      */
-    public LDPathTransform(final InputStream query) {
+    public LDPathTransform(final LDCacheBackend backend, final InputStream query) {
         this.query = query;
+        this.backend = backend;
     }
 
     /**
@@ -82,12 +85,13 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
      * @param resource the resource
      * @param session the session
      * @param nodeService a nodeService
+     * @param backend the LDCache backend
      * @param key the key
      * @return resource-type specific transform
      * @throws RepositoryException if repository exception occurred
      */
     public static LDPathTransform getResourceTransform(final FedoraResource resource, final Session session,
-            final NodeService nodeService, final String key) throws RepositoryException {
+            final NodeService nodeService, final LDCacheBackend backend, final String key) throws RepositoryException {
 
         final FedoraResource transformResource = nodeService.find(session, CONFIGURATION_FOLDER + key);
 
@@ -125,19 +129,15 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
                 .orElseThrow(() -> new TransformNotFoundException(
                     String.format("Couldn't find transformation for {} and transformation key {}",
                     resource.getPath(), key)));
-        return new LDPathTransform(transform.getContent());
+        return new LDPathTransform(backend, transform.getContent());
     }
 
     @Override
     public List<Map<String, Collection<Object>>> apply(final RdfStream stream) {
-        final LDPath<RDFNode> ldpathForResource =
-            getLdpathResource(stream);
-
-        final Resource context = createResource(stream.topic().getURI());
-
         try {
+            final LDPath<Value> ldpathForResource = new LDPath<Value>(backend);
             return ImmutableList.of(unsafeCast(
-                ldpathForResource.programQuery(context, new InputStreamReader(query))));
+                ldpathForResource.programQuery(new URIImpl(stream.topic().getURI()), new InputStreamReader(query))));
         } catch (final LDPathParseException e) {
             throw new RepositoryRuntimeException(e);
         }
@@ -156,16 +156,5 @@ public class LDPathTransform implements Transformation<List<Map<String, Collecti
     @Override
     public int hashCode() {
         return Objects.hashCode(query);
-    }
-
-    /**
-     * Get the LDPath resource for an object
-     * @param rdfStream
-     * @return the LDPath resource for the given object
-     */
-    private static LDPath<RDFNode> getLdpathResource(final RdfStream rdfStream) {
-
-        return new LDPath<>(new GenericJenaBackend(rdfStream.collect(toModel())));
-
     }
 }

@@ -17,14 +17,14 @@
  */
 package org.fcrepo.transform.transformations;
 
-import static com.hp.hpl.jena.graph.NodeFactory.createLiteral;
 import static com.hp.hpl.jena.graph.NodeFactory.createURI;
-import static com.hp.hpl.jena.graph.Triple.create;
+import static java.util.stream.Stream.empty;
 import static java.util.stream.Stream.of;
 import static org.fcrepo.transform.transformations.LDPathTransform.CONFIGURATION_FOLDER;
 import static org.fcrepo.transform.transformations.LDPathTransform.getResourceTransform;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -38,7 +38,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.List;
-import java.util.stream.Stream;
 
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -48,6 +47,7 @@ import javax.jcr.Workspace;
 import javax.jcr.nodetype.NodeType;
 import javax.ws.rs.core.UriBuilder;
 
+import org.apache.marmotta.ldpath.backend.linkeddata.LDCacheBackend;
 import org.fcrepo.kernel.api.RdfStream;
 import org.fcrepo.kernel.api.models.FedoraBinary;
 import org.fcrepo.kernel.api.models.FedoraResource;
@@ -91,6 +91,9 @@ public class LDPathTransformTest {
     @Mock
     private NamespaceRegistry mockRegistry;
 
+    @Mock
+    private LDCacheBackend mockBackend;
+
     private LDPathTransform testObj;
 
     @Before
@@ -101,7 +104,6 @@ public class LDPathTransformTest {
         when(mockNode.getSession()).thenReturn(mockSession);
         when(mockSession.getWorkspace()).thenReturn(mockWorkspace);
         when(mockWorkspace.getNamespaceRegistry()).thenReturn(mockRegistry);
-
     }
 
     @Test(expected = TransformNotFoundException.class)
@@ -115,14 +117,14 @@ public class LDPathTransformTest {
         when(mockNodeService.find(mockSession, CONFIGURATION_FOLDER + "some-program"))
         .thenReturn(mockConfigNode);
         when(mockConfigNode.getPath()).thenReturn(CONFIGURATION_FOLDER + "some-program");
-        when(mockConfigNode.getChildren()).thenReturn(Stream.of());
+        when(mockConfigNode.getChildren()).thenReturn(empty());
 
         final URI mockRdfType = UriBuilder.fromUri(REPOSITORY_NAMESPACE + "Resource").build();
         final List<URI> rdfTypes = new ArrayList<URI>();
         rdfTypes.add(mockRdfType);
         when(mockResource.getTypes()).thenReturn(rdfTypes);
 
-        getResourceTransform(mockResource, mockSession, mockNodeService, "some-program");
+        getResourceTransform(mockResource, mockSession, mockNodeService, mockBackend, "some-program");
     }
 
     @Test
@@ -141,35 +143,39 @@ public class LDPathTransformTest {
         final FedoraBinary mockChildConfig = mock(FedoraBinary.class);
         when(mockChildConfig.getPath())
                 .thenReturn(CONFIGURATION_FOLDER + "some-program/" + customNsPrefix + ":type");
-        when(mockConfigNode.getChildren()).thenReturn(Stream.of(mockChildConfig));
+        when(mockConfigNode.getChildren()).thenReturn(of(mockChildConfig));
 
         final URI mockRdfType = UriBuilder.fromUri(customNsUri + "type").build();
         when(mockResource.getTypes()).thenReturn(Arrays.asList(mockRdfType));
 
         when(mockChildConfig.getContent()).thenReturn(mockInputStream);
 
-        final LDPathTransform nodeTypeSpecificLdpathProgramStream =
-                getResourceTransform(mockResource, mockSession, mockNodeService, "some-program");
+        final LDPathTransform nodeTypeSpecificLdpathProgramStream = getResourceTransform(mockResource, mockSession,
+                mockNodeService, mockBackend, "some-program");
 
-        assertEquals(new LDPathTransform(mockInputStream), nodeTypeSpecificLdpathProgramStream);
+        assertEquals(new LDPathTransform(mockBackend, mockInputStream),
+                nodeTypeSpecificLdpathProgramStream);
     }
 
     @Test
     public void testProgramQuery() {
 
-        final RdfStream rdfStream = new DefaultRdfStream(createURI("abc"), of(
-                create(createURI("abc"),
-                        createURI("http://purl.org/dc/elements/1.1/title"),
-                        createLiteral("some-title"))));
-        final InputStream testReader = new ByteArrayInputStream("title = dc:title :: xsd:string ;".getBytes());
+        final RdfStream rdfStream = new DefaultRdfStream(
+                createURI("http://purl.org/dc/elements/1.1/contributor"), empty());
+        final InputStream testReader = new ByteArrayInputStream("title = rdfs:label :: xsd:string ;".getBytes());
 
-        testObj = new LDPathTransform(testReader);
+        testObj = new LDPathTransform(mockBackend, testReader);
         final List<Map<String,Collection<Object>>> stringCollectionMapList = testObj.apply(rdfStream);
+
         final Map<String,Collection<Object>> stringCollectionMap = stringCollectionMapList.get(0);
 
         assert(stringCollectionMap != null);
+
         assertEquals(1, stringCollectionMap.size());
+
+        assumeTrue(stringCollectionMap.get("title").size() > 0);
+
         assertEquals(1, stringCollectionMap.get("title").size());
-        assertTrue(stringCollectionMap.get("title").contains("some-title"));
+        assertTrue(stringCollectionMap.get("title").contains("Contributor"));
     }
 }
