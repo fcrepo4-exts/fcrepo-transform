@@ -252,7 +252,6 @@
           <systemPropertyVariables>
             <fcrepo.dynamic.test.port>${fcrepo.dynamic.test.port}</fcrepo.dynamic.test.port>
             <integration-test>true</integration-test>
-            <fcrepo.modeshape.config>classpath:/config/file-simple/repository.json</fcrepo.modeshape.config>
           </systemPropertyVariables>
         </configuration>
       </plugin>
