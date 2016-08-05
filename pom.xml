@@ -141,12 +141,6 @@
     </dependency>
 
     <dependency>
-      <groupId>org.infinispan</groupId>
-      <artifactId>infinispan-cachestore-leveldb</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-configs</artifactId>
       <version>${project.version}</version>
@@ -258,6 +252,7 @@
           <systemPropertyVariables>
             <fcrepo.dynamic.test.port>${fcrepo.dynamic.test.port}</fcrepo.dynamic.test.port>
             <integration-test>true</integration-test>
+            <fcrepo.modeshape.config>classpath:/config/file-simple/repository.json</fcrepo.modeshape.config>
           </systemPropertyVariables>
         </configuration>
       </plugin>
