@@ -19,6 +19,7 @@ package org.fcrepo.transform.http;
 
 import static com.google.common.collect.ImmutableMap.of;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.Response.ok;
 import static org.apache.jena.riot.WebContent.contentTypeN3;
 import static org.apache.jena.riot.WebContent.contentTypeNTriples;
 import static org.apache.jena.riot.WebContent.contentTypeRDFXML;
@@ -54,6 +55,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import org.fcrepo.http.api.ContentExposingResource;
 import org.fcrepo.kernel.api.exception.InvalidChecksumException;
@@ -159,11 +161,15 @@ public class FedoraTransform extends ContentExposingResource {
     @Path("{program}")
     @Produces({APPLICATION_JSON})
     @Timed
-    public Object evaluateLdpathProgram(@PathParam("program") final String program)
+    public Response evaluateLdpathProgram(@PathParam("program") final String program)
             throws RepositoryException {
         LOGGER.info("GET transform, '{}', for '{}'", program, externalPath);
 
-        return getResourceTransform(resource(), session, nodeService, program).apply(getResourceTriples());
+        return ok()
+            .entity(getResourceTransform(resource(), session, nodeService, program).apply(getResourceTriples()))
+            .header("Warning", "The fcr:transform endpoint is deprecated and will be removed" +
+                    "in a future version of Fedora")
+            .build();
 
     }
 
@@ -181,7 +187,7 @@ public class FedoraTransform extends ContentExposingResource {
             contentTypeResultsXML, contentTypeResultsBIO, contentTypeTurtle,
             contentTypeN3, contentTypeNTriples, contentTypeRDFXML})
     @Timed
-    public Object evaluateTransform(@HeaderParam("Content-Type") final MediaType contentType,
+    public Response evaluateTransform(@HeaderParam("Content-Type") final MediaType contentType,
                                     final InputStream requestBodyStream) {
 
         if (transformationFactory == null) {
@@ -189,7 +195,11 @@ public class FedoraTransform extends ContentExposingResource {
         }
         LOGGER.info("POST transform for '{}'", externalPath);
 
-        return transformationFactory.getTransform(contentType, requestBodyStream).apply(getResourceTriples());
+        return ok()
+            .entity(transformationFactory.getTransform(contentType, requestBodyStream).apply(getResourceTriples()))
+            .header("Warning", "The fcr:transform endpoint is deprecated and will be removed" +
+                    "in a future version of Fedora")
+            .build();
 
     }
 
