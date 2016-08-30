@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FedoraTransform.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Fedora Repository RDF Transformations Module</a> &gt; <a href="index.source.html" class="el_package">org.fcrepo.transform.http</a> &gt; <span class="el_source">FedoraTransform.java</span></div><h1>FedoraTransform.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to DuraSpace under one or more contributor license agreements.
+ * See the NOTICE file distributed with this work for additional information
+ * regarding copyright ownership.
+ *
+ * DuraSpace licenses this file to you under the Apache License,
+ * Version 2.0 (the &quot;License&quot;); you may not use this file except in
+ * compliance with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.fcrepo.transform.http;
+
+import static com.google.common.collect.ImmutableMap.of;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static org.apache.jena.riot.WebContent.contentTypeN3;
+import static org.apache.jena.riot.WebContent.contentTypeNTriples;
+import static org.apache.jena.riot.WebContent.contentTypeRDFXML;
+import static org.apache.jena.riot.WebContent.contentTypeResultsBIO;
+import static org.apache.jena.riot.WebContent.contentTypeResultsJSON;
+import static org.apache.jena.riot.WebContent.contentTypeResultsXML;
+import static org.apache.jena.riot.WebContent.contentTypeSPARQLQuery;
+import static org.apache.jena.riot.WebContent.contentTypeSSE;
+import static org.apache.jena.riot.WebContent.contentTypeTextCSV;
+import static org.apache.jena.riot.WebContent.contentTypeTextPlain;
+import static org.apache.jena.riot.WebContent.contentTypeTextTSV;
+import static org.apache.jena.riot.WebContent.contentTypeTurtle;
+import static org.fcrepo.transform.transformations.LDPathTransform.APPLICATION_RDF_LDPATH;
+import static org.fcrepo.transform.transformations.LDPathTransform.CONFIGURATION_FOLDER;
+import static org.fcrepo.transform.transformations.LDPathTransform.getResourceTransform;
+import static org.fcrepo.transform.transformations.LDPathTransform.DEFAULT_TRANSFORM_RESOURCE;
+import static org.slf4j.LoggerFactory.getLogger;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+import org.fcrepo.http.api.ContentExposingResource;
+import org.fcrepo.kernel.api.exception.InvalidChecksumException;
+import org.fcrepo.kernel.api.exception.RepositoryRuntimeException;
+import org.fcrepo.kernel.api.models.FedoraBinary;
+import org.fcrepo.kernel.api.models.FedoraResource;
+import org.fcrepo.transform.TransformationFactory;
+import org.jvnet.hk2.annotations.Optional;
+import org.slf4j.Logger;
+import org.springframework.context.annotation.Scope;
+
+import com.codahale.metrics.annotation.Timed;
+import com.google.common.annotations.VisibleForTesting;
+
+/**
+ * Endpoint for transforming object properties using stored
+ * or POSTed transformations.
+ *
+ * @author cbeer
+ */
+@Scope(&quot;request&quot;)
+@Path(&quot;/{path: .*}/fcr:transform&quot;)
+public class FedoraTransform extends ContentExposingResource {
+
+    @Inject
+    protected Session session;
+
+<span class="fc" id="L84">    private static final Logger LOGGER = getLogger(FedoraTransform.class);</span>
+
+    @Inject
+    @Optional
+    private TransformationFactory transformationFactory;
+
+    @PathParam(&quot;path&quot;) protected String externalPath;
+
+    /**
+     * Default entry point
+     */
+<span class="fc" id="L95">    public FedoraTransform() { }</span>
+
+    /**
+     * Create a new FedoraNodes instance for a given path
+     * @param externalPath the external path
+     */
+    @VisibleForTesting
+<span class="nc" id="L102">    public FedoraTransform(final String externalPath) {</span>
+<span class="nc" id="L103">        this.externalPath = externalPath;</span>
+<span class="nc" id="L104">    }</span>
+
+
+    /**
+     * Register the LDPath configuration tree in JCR
+     *
+     * @throws RepositoryException if repository exception occurred
+     * @throws java.io.IOException if IO exception occurred
+     */
+    @PostConstruct
+    public void setUpRepositoryConfiguration() throws RepositoryException, IOException {
+
+<span class="fc" id="L116">        final Session internalSession = sessions.getInternalSession();</span>
+        try {
+
+            // Create this resource or it becomes a PairTree which is not referenceable.
+<span class="fc" id="L120">            containerService.findOrCreate(internalSession, &quot;/fedora:system/fedora:transform&quot;);</span>
+
+<span class="fc" id="L122">            final Map&lt;String, String&gt; transformations = of(</span>
+                    &quot;default&quot;, &quot;/ldpath/default/ldpath_program.txt&quot;,
+                    &quot;deluxe&quot;, &quot;/ldpath/deluxe/ldpath_program.txt&quot;);
+<span class="fc" id="L125">            transformations.forEach((key, value) -&gt; {</span>
+
+<span class="fc" id="L127">                final FedoraResource resource =</span>
+<span class="fc" id="L128">                        containerService.findOrCreate(internalSession, CONFIGURATION_FOLDER + key);</span>
+<span class="fc" id="L129">                LOGGER.debug(&quot;Transformation default resource: {}&quot;, resource.getPath());</span>
+
+<span class="fc" id="L131">                final Stream&lt;FedoraResource&gt; children = resource.getChildren();</span>
+<span class="fc" id="L132">                children.forEach(child -&gt; LOGGER.debug(&quot;Child is {}&quot;, child.getPath()));</span>
+<span class="fc" id="L133">                final String uploadPath = CONFIGURATION_FOLDER + key + &quot;/&quot; + DEFAULT_TRANSFORM_RESOURCE;</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">                if (!resource.getChildren().anyMatch(child -&gt; child.getPath().equalsIgnoreCase(uploadPath))) {</span>
+<span class="fc" id="L135">                    LOGGER.debug(&quot;Uploading the stream to {}&quot;, uploadPath);</span>
+<span class="fc" id="L136">                    final FedoraBinary base = binaryService.findOrCreate(internalSession, uploadPath);</span>
+                    try {
+<span class="fc" id="L138">                        base.setContent(getClass().getResourceAsStream(value), null, null, null, null);</span>
+<span class="nc" id="L139">                    } catch (final InvalidChecksumException e) {</span>
+<span class="nc" id="L140">                        throw new RepositoryRuntimeException(e);</span>
+<span class="fc" id="L141">                    }</span>
+                }
+<span class="fc" id="L143">            });</span>
+
+<span class="fc" id="L145">            internalSession.save();</span>
+        } finally {
+<span class="pc" id="L147">            internalSession.logout();</span>
+<span class="fc" id="L148">        }</span>
+<span class="fc" id="L149">    }</span>
+
+    /**
+     * Execute an LDpath program transform
+     *
+     * @param program the LDpath program
+     * @return Binary blob
+     * @throws RepositoryException if repository exception occurred
+     */
+    @GET
+    @Path(&quot;{program}&quot;)
+    @Produces({APPLICATION_JSON})
+    @Timed
+    public Object evaluateLdpathProgram(@PathParam(&quot;program&quot;) final String program)
+            throws RepositoryException {
+<span class="fc" id="L164">        LOGGER.info(&quot;GET transform, '{}', for '{}'&quot;, program, externalPath);</span>
+
+<span class="fc" id="L166">        return getResourceTransform(resource(), session, nodeService, program).apply(getResourceTriples());</span>
+
+    }
+
+    /**
+     * Get the LDPath output as a JSON stream appropriate for e.g. Solr
+     *
+     * @param contentType the content type
+     * @param requestBodyStream the request body stream
+     * @return LDPath as a JSON stream
+     */
+    @POST
+    @Consumes({APPLICATION_RDF_LDPATH, contentTypeSPARQLQuery})
+    @Produces({APPLICATION_JSON, contentTypeTextTSV, contentTypeTextCSV,
+            contentTypeSSE, contentTypeTextPlain, contentTypeResultsJSON,
+            contentTypeResultsXML, contentTypeResultsBIO, contentTypeTurtle,
+            contentTypeN3, contentTypeNTriples, contentTypeRDFXML})
+    @Timed
+    public Object evaluateTransform(@HeaderParam(&quot;Content-Type&quot;) final MediaType contentType,
+                                    final InputStream requestBodyStream) {
+
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">        if (transformationFactory == null) {</span>
+<span class="fc" id="L188">            transformationFactory = new TransformationFactory();</span>
+        }
+<span class="fc" id="L190">        LOGGER.info(&quot;POST transform for '{}'&quot;, externalPath);</span>
+
+<span class="fc" id="L192">        return transformationFactory.getTransform(contentType, requestBodyStream).apply(getResourceTriples());</span>
+
+    }
+
+    @Override
+    protected Session session() {
+<span class="fc" id="L198">        return session;</span>
+    }
+
+    @Override
+    protected String externalPath() {
+<span class="fc" id="L203">        return externalPath;</span>
+    }
+
+    @Override
+    protected void addResourceHttpHeaders(final FedoraResource resource) {
+<span class="nc" id="L208">        throw new UnsupportedOperationException();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
