@@ -10,4 +10,3 @@ Example uses might include:
 ## Maintainers
 
 * [Jared Whiklo](https://github.com/whikloj)
-* [Aaron Coburn](https://github.com/acoburn)
