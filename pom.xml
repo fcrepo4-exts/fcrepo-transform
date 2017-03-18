@@ -5,14 +5,14 @@
   <parent>
     <artifactId>fcrepo</artifactId>
     <groupId>org.fcrepo</groupId>
-    <version>4.6.2-SNAPSHOT</version>
+    <version>4.6.2</version>
   </parent>
 
   <groupId>org.fcrepo.transform</groupId>
   <artifactId>fcrepo-transform</artifactId>
   <packaging>bundle</packaging>
 
-  <version>4.6.2-SNAPSHOT</version>
+  <version>4.6.2</version>
 
   <name>Fedora Repository RDF Transformations Module</name>
   <description>The Fedora Commons repository transformations module: Provides facilities to use SPARQL or LDPath to tranform repository RDF into desired forms.</description>
@@ -53,7 +53,7 @@
     <connection>scm:git:git://github.com/${project_organization}/${project_name}.git</connection>
     <developerConnection>scm:git:git@github.com:${project_organization}/${project_name}.git</developerConnection>
     <url>https://github.com/${project_organization}/${project_name}</url>
-    <tag>HEAD</tag>
+    <tag>fcrepo-transform-4.6.2</tag>
   </scm>
 
   <repositories>
@@ -74,7 +74,7 @@
     <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-kernel-api</artifactId>
-      <version>4.6.2-SNAPSHOT</version>
+      <version>4.6.2</version>
       <exclusions>
         <exclusion>
           <groupId>ch.qos.logback</groupId>
@@ -94,13 +94,13 @@
     <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-http-commons</artifactId>
-      <version>4.6.2-SNAPSHOT</version>
+      <version>4.6.2</version>
     </dependency>
 
     <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-http-api</artifactId>
-      <version>4.6.2-SNAPSHOT</version>
+      <version>4.6.2</version>
     </dependency>
 
     <dependency>
@@ -128,7 +128,7 @@
     <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-http-commons</artifactId>
-      <version>4.6.2-SNAPSHOT</version>
+      <version>4.6.2</version>
       <scope>test</scope>
       <type>test-jar</type>
     </dependency>
@@ -136,7 +136,7 @@
     <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-kernel-modeshape</artifactId>
-      <version>4.6.2-SNAPSHOT</version>
+      <version>4.6.2</version>
       <scope>test</scope>
     </dependency>
 
@@ -149,14 +149,14 @@
     <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-configs</artifactId>
-      <version>4.6.2-SNAPSHOT</version>
+      <version>4.6.2</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>org.fcrepo</groupId>
       <artifactId>fcrepo-auth-common</artifactId>
-      <version>4.6.2-SNAPSHOT</version>
+      <version>4.6.2</version>
       <scope>test</scope>
     </dependency>
 
