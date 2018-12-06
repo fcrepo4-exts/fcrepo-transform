@@ -1,4 +1,4 @@
-# fcrepo Transform [![Build Status](https://travis-ci.org/fcrepo4-exts/fcrepo-transform.png?branch=master)](https://travis-ci.org/fcrepo4-exts/fcrepo-transform)
+# fcrepo Transform [![Build Status](https://travis-ci.com/fcrepo4-labs/fcrepo-transform.png?branch=master)](https://travis-ci.com/fcrepo4-labs/fcrepo-transform)
 
 fcrepo-transform allows you to set up and publish transformations of the RDF that composes a Fedora object's representation. You can use SPARQL for RDF-to-RDF transformations, or LDPath for RDF-to-named-fields transformations. 
 
